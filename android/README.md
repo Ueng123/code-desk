@@ -4,7 +4,7 @@ Android 8.0(API 26) 이상용 전용 WebView 앱입니다. 앱 ID는 `com.ueng12
 
 ## 설치
 
-GitHub Release의 `code-desk-android.apk`를 태블릿에서 내려받아 실행합니다. 요청 시 다운로드에 사용한 브라우저 또는 파일 앱의 **이 출처 허용**을 켜고 설치합니다. 현재 APK는 개인 설치용 debug 서명 빌드이며 Play Store 배포용 빌드가 아닙니다.
+[APK 다운로드](https://code-desk-topaz.vercel.app/downloads/code-desk-android.apk)에서 파일을 태블릿으로 내려받아 실행합니다. 요청 시 다운로드에 사용한 브라우저 또는 파일 앱의 **이 출처 허용**을 켜고 설치합니다. 현재 APK는 개인 설치용 debug 서명 빌드이며 Play Store 배포용 빌드가 아닙니다.
 
 인터넷과 최신 Android System WebView 또는 Chrome이 필요합니다. 기존 브라우저의 localStorage와 앱 저장소는 서로 다르므로 필요한 코드는 먼저 복사해 두세요. 앱의 데이터 삭제나 앱 제거 시 앱에 저장한 코드도 삭제됩니다.
 

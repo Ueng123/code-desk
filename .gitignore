@@ -13,3 +13,5 @@ android/local.properties
 *.jks
 *.keystore
 *.apk
+
+!public/downloads/*.apk
