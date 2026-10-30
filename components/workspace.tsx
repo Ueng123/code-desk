@@ -136,20 +136,7 @@ export function Workspace() {
         </div>
       </header>
 
-      <main>
-        <section className="intro" aria-labelledby="workspace-title">
-          <div>
-            <div className="eyebrow">
-              <span /> YOUR DAILY CODING SPACE
-            </div>
-            <h1 id="workspace-title">생각을 코드로, 한 줄씩.</h1>
-            <p>문제에 집중하세요. 풀이를 위한 공간은 준비되어 있어요.</p>
-          </div>
-          <span className="preview-badge">
-            <span /> UI PROTOTYPE
-          </span>
-        </section>
-
+      <main aria-label="코딩 작업 공간">
         <div className="workspace-grid">
           <section className="editor-panel" aria-label="코드 편집 영역">
             <div className="panel-header">
