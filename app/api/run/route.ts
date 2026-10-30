@@ -87,6 +87,8 @@ export async function POST(request: NextRequest) {
       "invalid_request",
     );
   }
+  if (active >= 2)
+    return failure("요청이 많습니다. 잠시 후 다시 실행해 주세요.", 429);
   active++;
   try {
     const result = await executeCode({
