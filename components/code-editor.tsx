@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type CSSProperties } from "react";
+import { useEffect, useRef } from "react";
 import { Compartment, EditorState } from "@codemirror/state";
 import {
   EditorView,
@@ -65,6 +65,20 @@ function editorAppearance(theme: Theme) {
   ];
 }
 
+function editorTypography(size: number) {
+  return EditorView.theme({
+    "&": { fontSize: `${size}px` },
+    ".cm-scroller": { fontSize: "inherit", lineHeight: `${size * 1.6}px` },
+    ".cm-content, .cm-gutters": { fontSize: "inherit", lineHeight: "inherit" },
+    ".cm-gutters": { paddingLeft: "0.8em" },
+    ".cm-gutterElement": { lineHeight: "inherit" },
+    ".cm-lineNumbers .cm-gutterElement": {
+      minWidth: "calc(2ch + 0.8em)",
+      padding: "0 0.4em",
+    },
+  });
+}
+
 // Parent keys this component by language, preserving each document independently.
 export function CodeEditor({
   language,
@@ -77,6 +91,8 @@ export function CodeEditor({
   const viewRef = useRef<EditorView | null>(null);
   const appearance = useRef(new Compartment());
   const initialTheme = useRef(theme);
+  const typography = useRef(new Compartment());
+  const initialFontSize = useRef(fontSize);
   const host = useRef<HTMLDivElement>(null);
   const callbacks = useRef({ onChange, onCursor });
   useEffect(() => {
@@ -99,6 +115,7 @@ export function CodeEditor({
           indentOnInput(),
           indentUnit.of("    "),
           appearance.current.of(editorAppearance(initialTheme.current)),
+          typography.current.of(editorTypography(initialFontSize.current)),
           language === "python" ? python() : StreamLanguage.define(csharp),
           keymap.of([
             ...closeBracketsKeymap,
@@ -125,14 +142,12 @@ export function CodeEditor({
           EditorView.theme({
             "&": {
               height: "100%",
-              fontSize: "var(--code-font-size)",
               backgroundColor: "var(--editor-bg)",
               color: "var(--ink)",
             },
             ".cm-scroller": {
               overflow: "auto",
               fontFamily: "var(--font-mono)",
-              lineHeight: "var(--code-line-height)",
             },
             ".cm-content": {
               padding: "22px 0",
@@ -144,9 +159,7 @@ export function CodeEditor({
               background: "var(--editor-bg)",
               color: "var(--editor-gutter)",
               border: "none",
-              padding: "0 0 0 12px",
             },
-            ".cm-gutterElement": { lineHeight: "var(--code-line-height)" },
             ".cm-cursor": { borderLeftColor: "var(--editor-caret)" },
             ".cm-activeLine, .cm-activeLineGutter": {
               background: "var(--editor-active)",
@@ -178,18 +191,14 @@ export function CodeEditor({
     });
   }, [theme]);
   useEffect(() => {
-    viewRef.current?.requestMeasure();
+    const view = viewRef.current;
+    if (!view) return;
+    // Reconfigure a CodeMirror theme rather than changing ancestor CSS variables:
+    // the theme change invalidates cached text metrics and resynchronizes gutters.
+    view.dispatch({
+      effects: typography.current.reconfigure(editorTypography(fontSize)),
+    });
+    view.requestMeasure();
   }, [fontSize]);
-  return (
-    <div
-      className="editor-host"
-      ref={host}
-      style={
-        {
-          "--code-font-size": `${fontSize}px`,
-          "--code-line-height": `${fontSize * 1.6}px`,
-        } as CSSProperties
-      }
-    />
-  );
+  return <div className="editor-host" ref={host} />;
 }
