@@ -276,7 +276,7 @@ main {
   background: var(--soft);
 }
 .collapse-button {
-  display: none;
+  display: flex;
 }
 .log-content {
   display: flex;
@@ -834,5 +834,51 @@ svg {
 @media (prefers-reduced-motion: reduce) {
   .is-spinning {
     animation: none;
+  }
+}
+
+.workspace-grid.logs-hidden {
+  grid-template-columns: minmax(0, 1fr) 56px;
+}
+.log-content[hidden] {
+  display: none;
+}
+.log-rail {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex: 1;
+  width: 100%;
+  min-height: 56px;
+  padding: 7px 5px;
+  border: 0;
+  background: var(--surface);
+  color: var(--muted);
+}
+.log-rail-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  aspect-ratio: 1;
+  flex-shrink: 0;
+  border-radius: 8px;
+}
+.log-rail:hover .log-rail-icon {
+  background: var(--soft);
+  color: var(--ink);
+}
+.log-rail:focus-visible {
+  outline-offset: -3px;
+}
+@media (orientation: portrait), (max-width: 760px) {
+  .logs-panel.is-collapsed {
+    min-height: 58px;
+    height: 58px;
+  }
+  .log-rail {
+    align-items: center;
+    justify-content: flex-end;
+    padding: 6px;
   }
 }

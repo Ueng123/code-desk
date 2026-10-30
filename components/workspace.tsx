@@ -248,7 +248,7 @@ export function Workspace() {
       </header>
 
       <main aria-label="코딩 작업 공간">
-        <div className="workspace-grid">
+        <div className={`workspace-grid${expanded ? "" : " logs-hidden"}`}>
           <section className="editor-panel" aria-label="코드 편집 영역">
             <div className="editor-content">
               {loaded ? (
@@ -286,41 +286,57 @@ export function Workspace() {
             className={`logs-panel ${expanded ? "is-expanded" : "is-collapsed"}`}
             aria-label="실행 로그 영역"
           >
-            <div className="panel-header logs-header">
-              <h2>
-                <Icon name="terminal" /> 실행 로그{" "}
-                <span className="log-count">{entries.length}</span>
-              </h2>
-              <div className="log-actions">
-                <button
-                  className="clear-button"
-                  onClick={() => {
-                    setEntries([]);
-                    setStatus("ready");
-                    setMetrics(null);
-                  }}
-                  disabled={!entries.length || status === "running"}
-                  aria-label="실행 로그 지우기"
-                >
-                  지우기
-                </button>
-                <button
-                  className="collapse-button"
-                  aria-expanded={expanded}
-                  aria-controls="log-content"
-                  onClick={() => setExpanded((value) => !value)}
-                >
-                  {expanded ? "접기" : "펼치기"}
-                  <Icon
-                    name="chevron"
-                    style={{
-                      transform: expanded ? "rotate(180deg)" : undefined,
+            {expanded ? (
+              <div className="panel-header logs-header">
+                <h2>
+                  <Icon name="terminal" /> 실행 로그{" "}
+                  <span className="log-count">{entries.length}</span>
+                </h2>
+                <div className="log-actions">
+                  <button
+                    className="clear-button"
+                    onClick={() => {
+                      setEntries([]);
+                      setStatus("ready");
+                      setMetrics(null);
                     }}
-                  />
-                </button>
+                    disabled={!entries.length || status === "running"}
+                    aria-label="실행 로그 지우기"
+                  >
+                    지우기
+                  </button>
+                  <button
+                    className="collapse-button"
+                    aria-expanded={expanded}
+                    aria-controls="log-content"
+                    onClick={() => setExpanded((value) => !value)}
+                  >
+                    {expanded ? "접기" : "펼치기"}
+                    <Icon
+                      name="chevron"
+                      style={{
+                        transform: expanded ? "rotate(180deg)" : undefined,
+                      }}
+                    />
+                  </button>
+                </div>
               </div>
-            </div>
-            <div id="log-content" className="log-content">
+            ) : (
+              <button
+                className="log-rail"
+                type="button"
+                aria-label="실행 로그 펼치기"
+                title="실행 로그 펼치기"
+                aria-expanded={false}
+                aria-controls="log-content"
+                onClick={() => setExpanded(true)}
+              >
+                <span className="log-rail-icon">
+                  <Icon name="terminal" />
+                </span>
+              </button>
+            )}
+            <div id="log-content" className="log-content" hidden={!expanded}>
               <div
                 className="log-body"
                 ref={logBody}
