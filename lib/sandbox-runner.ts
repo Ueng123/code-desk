@@ -8,6 +8,7 @@ const supervisor = String.raw`
 import json, os, selectors, signal, subprocess, sys, time
 command = (["python3", "-I", "-u", "/vercel/sandbox/solution.py"] if sys.argv[1] == "python" else
     ["/vercel/sandbox/.dotnet/dotnet", "run", "--no-restore", "--project", "/vercel/sandbox/runner", "--verbosity", "quiet"])
+started = time.monotonic()
 p = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
     start_new_session=True, cwd="/vercel/sandbox")
 selector = selectors.DefaultSelector()
@@ -43,7 +44,7 @@ finally:
     selector.close()
 result = {"mode": "execution", "status": "completed" if p.returncode == 0 and not reason else "error",
     "stdout": output["stdout"].decode("utf-8", "replace"), "stderr": output["stderr"].decode("utf-8", "replace"),
-    "exitCode": p.returncode}
+    "exitCode": p.returncode, "durationMs": round((time.monotonic() - started) * 1000), "outputBytes": total}
 if reason:
     result["reason"] = reason
     result["stderr"] += "\n" + ("실행 시간 제한(20초)을 초과했습니다." if reason == "timeout" else "출력 제한(64KB)을 초과했습니다.")

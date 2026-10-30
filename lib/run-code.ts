@@ -11,6 +11,10 @@ export interface RunResponse {
   stdout: string;
   stderr: string;
   exitCode: number | null;
+  /** Command duration, including C# compilation, excluding Sandbox startup. */
+  durationMs?: number;
+  /** Combined stdout/stderr bytes captured before truncation. */
+  outputBytes?: number;
   reason?: "timeout" | "output_limit" | "service" | "invalid_request";
 }
 

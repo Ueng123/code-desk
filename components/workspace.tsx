@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Icon } from "./icon";
 import { CodeEditor } from "./code-editor";
 import { languages, type Language } from "@/lib/languages";
 import { runCode } from "@/lib/run-code";
@@ -35,6 +36,10 @@ export function Workspace() {
   const [saved, setSaved] = useState(true);
   const [status, setStatus] = useState<Status>("ready");
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [metrics, setMetrics] = useState<{
+    durationMs: number;
+    outputBytes: number;
+  } | null>(null);
   const [expanded, setExpanded] = useState(true);
   const [cursor, setCursor] = useState({ line: 1, column: 1 });
   const nextId = useRef(0);
@@ -130,11 +135,17 @@ export function Workspace() {
     running.current = true;
     setExpanded(true);
     setStatus("running");
+    setMetrics(null);
     const runLanguage = languages[language].name;
     append("running", `${runLanguage} · 실행 환경 준비 및 코드 실행 중…`);
     try {
       const result = await runCode({ language, code: documents[language] });
       setStatus(result.status);
+      if (result.durationMs !== undefined && result.outputBytes !== undefined)
+        setMetrics({
+          durationMs: result.durationMs,
+          outputBytes: result.outputBytes,
+        });
       if (result.stdout)
         append(result.status, `[${runLanguage} stdout]\n${result.stdout}`);
       if (result.stderr)
@@ -159,7 +170,7 @@ export function Workspace() {
       <header className="topbar">
         <a className="brand" href="/" aria-label="Code Desk 홈">
           <span className="brand-icon" aria-hidden="true">
-            ⌘
+            <Icon name="command" />
           </span>
           <span>
             code<span className="brand-light">desk</span>
@@ -180,7 +191,7 @@ export function Workspace() {
                 )
               }
             >
-              {!isDarkTheme(theme) ? "☾" : "☀"}
+              <Icon name={!isDarkTheme(theme) ? "moon" : "sun"} />
             </button>
             <label className="visually-hidden" htmlFor="theme">
               화면 테마
@@ -223,11 +234,15 @@ export function Workspace() {
           </div>
           <button
             className="run-button"
+            aria-label={status === "running" ? "실행 중" : "코드 실행"}
+            title={status === "running" ? "실행 중" : "코드 실행"}
             onClick={handleRun}
             disabled={!loaded || status === "running"}
           >
-            <span aria-hidden="true">{status === "running" ? "◌" : "▷"}</span>
-            {status === "running" ? "실행 중…" : "코드 실행"}
+            <Icon
+              name={status === "running" ? "spinner" : "play"}
+              className={status === "running" ? "is-spinning" : undefined}
+            />
           </button>
         </div>
       </header>
@@ -235,16 +250,6 @@ export function Workspace() {
       <main aria-label="코딩 작업 공간">
         <div className="workspace-grid">
           <section className="editor-panel" aria-label="코드 편집 영역">
-            <div className="panel-header">
-              <div className="file-tab">
-                <span className="file-icon" aria-hidden="true">
-                  {language === "python" ? "Py" : "C#"}
-                </span>
-                {languages[language].file}
-                <span className="file-dot" />
-              </div>
-              <span className="editor-label">코드 편집기</span>
-            </div>
             <div className="editor-content">
               {loaded ? (
                 <CodeEditor
@@ -264,7 +269,7 @@ export function Workspace() {
                 {!loaded
                   ? "불러오는 중"
                   : saved
-                    ? "✓ 이 브라우저에 자동 저장"
+                    ? "이 브라우저에 자동 저장"
                     : "저장 불가 · 현재 탭에서만 유지"}
               </span>
               <div>
@@ -283,7 +288,7 @@ export function Workspace() {
           >
             <div className="panel-header logs-header">
               <h2>
-                <span aria-hidden="true">›_</span> 실행 로그{" "}
+                <Icon name="terminal" /> 실행 로그{" "}
                 <span className="log-count">{entries.length}</span>
               </h2>
               <div className="log-actions">
@@ -292,6 +297,7 @@ export function Workspace() {
                   onClick={() => {
                     setEntries([]);
                     setStatus("ready");
+                    setMetrics(null);
                   }}
                   disabled={!entries.length || status === "running"}
                   aria-label="실행 로그 지우기"
@@ -304,18 +310,17 @@ export function Workspace() {
                   aria-controls="log-content"
                   onClick={() => setExpanded((value) => !value)}
                 >
-                  {expanded ? "접기 −" : "펼치기 +"}
+                  {expanded ? "접기" : "펼치기"}
+                  <Icon
+                    name="chevron"
+                    style={{
+                      transform: expanded ? "rotate(180deg)" : undefined,
+                    }}
+                  />
                 </button>
               </div>
             </div>
             <div id="log-content" className="log-content">
-              <div className="log-state">
-                <span className={`status-pill ${status}`} role="status">
-                  <span />
-                  {statusLabels[status]}
-                </span>
-                <span>SANDBOX</span>
-              </div>
               <div
                 className="log-body"
                 ref={logBody}
@@ -324,57 +329,44 @@ export function Workspace() {
                 aria-live="polite"
                 aria-relevant="additions"
               >
-                {entries.length === 0 ? (
-                  <div className="empty-logs">
-                    <div className="terminal-icon" aria-hidden="true">
-                      &gt;_
+                {entries.map((entry) => (
+                  <article
+                    key={entry.id}
+                    className={`log-entry ${entry.status}`}
+                  >
+                    <div>
+                      <span className="entry-label">
+                        {statusLabels[entry.status]}
+                      </span>
+                      <time>{entry.time}</time>
                     </div>
-                    <h3>첫 번째 아이디어를 적어보세요</h3>
-                    <p>
-                      코드를 작성하고 <strong>코드 실행</strong>를 누르면
-                      <br />
-                      이곳에서 상태를 확인할 수 있어요.
-                    </p>
-                    <span className="empty-divider" />
-                    <p className="empty-note">
-                      Python · C# / 표준 입력은 빈 값으로 처리해요.
-                    </p>
-                  </div>
-                ) : (
-                  entries.map((entry) => (
-                    <article
-                      key={entry.id}
-                      className={`log-entry ${entry.status}`}
-                    >
-                      <div>
-                        <span className="entry-label">
-                          {statusLabels[entry.status]}
-                        </span>
-                        <time>{entry.time}</time>
-                      </div>
-                      <p>{entry.message}</p>
-                    </article>
-                  ))
-                )}
-              </div>
-              <div className="preview-notice">
-                <span aria-hidden="true">ⓘ</span>
-                <div>
-                  <strong>Vercel Sandbox에서 격리 실행</strong>
-                  <p>실행 20초 · 출력 64KB · 외부 네트워크 차단</p>
-                </div>
+                    <p>{entry.message}</p>
+                  </article>
+                ))}
               </div>
             </div>
           </section>
         </div>
         <footer className="workspace-footer">
-          <span>
-            <span className="footer-dot" /> 마음 편히, 나만의 속도로.
+          <span className={`footer-status ${status}`} role="status">
+            {statusLabels[status]}
           </span>
-          <span>
-            Tab 들여쓰기 <span className="footer-separator">/</span> Esc → Tab
-            편집기 밖으로 이동
-          </span>
+          <div className="execution-metrics">
+            <span>
+              실행 시간{" "}
+              <strong>
+                {metrics ? `${(metrics.durationMs / 1000).toFixed(3)} s` : "—"}
+              </strong>
+            </span>
+            <span>
+              출력{" "}
+              <strong>
+                {metrics
+                  ? `${(metrics.outputBytes / 1024).toFixed(2)} KB`
+                  : "—"}
+              </strong>
+            </span>
+          </div>
         </footer>
       </main>
     </div>

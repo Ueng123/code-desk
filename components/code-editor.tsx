@@ -130,7 +130,7 @@ export function CodeEditor({
             ".cm-scroller": {
               overflow: "auto",
               fontFamily: "var(--font-mono)",
-              lineHeight: "1.85",
+              lineHeight: "24px",
             },
             ".cm-content": {
               padding: "22px 0",
@@ -142,8 +142,10 @@ export function CodeEditor({
               background: "var(--editor-bg)",
               color: "var(--editor-gutter)",
               border: "none",
-              padding: "22px 0 22px 12px",
+              padding: "0 0 0 12px",
             },
+            ".cm-gutterElement": { lineHeight: "24px" },
+            ".cm-cursor": { borderLeftColor: "var(--editor-caret)" },
             ".cm-activeLine, .cm-activeLineGutter": {
               background: "var(--editor-active)",
             },
