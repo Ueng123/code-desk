@@ -5,3 +5,11 @@ out/
 .env*
 
 .vercel/
+
+# Android build output and signing material
+android/.gradle/
+android/**/build/
+android/local.properties
+*.jks
+*.keystore
+*.apk

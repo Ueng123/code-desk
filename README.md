@@ -62,3 +62,7 @@ node --env-file=.env.local scripts/prepare-csharp.mjs
 헤더의 테마 선택에서 총 14개 테마를 고를 수 있습니다: Light, Dark, Rider Dark, Dracula, Atom One Dark/Light, VS Code Dark+/Light+, GitHub Dark/Light, Nord, Solarized Dark/Light, Monokai. 각 편집기 테마의 색상에서 영감을 받은 자체 팔레트이며, 라이트·다크 그룹으로 표시합니다. 해·달 버튼으로 라이트와 최근 선택한 다크 테마 사이를 전환합니다. 선택은 이 브라우저에 저장되며, 첫 방문에는 시스템의 화면 모드를 따릅니다. 테마 전환은 편집기 문서, 커서, 실행 취소 기록을 유지합니다.
 
 `Ctrl+S`와 `⌘+S`는 페이지 저장 창을 열지 않습니다. 코드는 입력할 때 기존 방식대로 자동 저장됩니다.
+
+## Android 앱
+
+기존 배포 사이트를 전용 WebView로 여는 Android 앱은 [`android/`](android/README.md)에 있습니다. 설치 방법과 APK 재빌드 방법은 해당 문서를 참고하세요. Android 프로젝트는 웹 앱의 빌드와 별도로 관리합니다.
