@@ -4,6 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { CodeEditor } from "./code-editor";
 import { languages, type Language } from "@/lib/languages";
 import { runCode } from "@/lib/run-code";
+import {
+  isTheme,
+  themeStorageKey,
+  type Theme,
+  type DarkTheme,
+} from "@/lib/themes";
 
 type Status = "ready" | "running" | "completed" | "error";
 type Entry = { id: number; time: string; status: Status; message: string };
@@ -16,6 +22,8 @@ const statusLabels: Record<Status, string> = {
 const storageKey = (language: Language) => `code-desk:v1:${language}`;
 
 export function Workspace() {
+  const [theme, setTheme] = useState<Theme>("light");
+  const lastDarkTheme = useRef<DarkTheme>("rider-dark");
   const [language, setLanguage] = useState<Language>("python");
   const [documents, setDocuments] = useState({
     python: languages.python.sample,
@@ -44,6 +52,45 @@ export function Workspace() {
     }
     setLoaded(true);
   }, []);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(themeStorageKey);
+      const restored = isTheme(stored)
+        ? stored
+        : window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "rider-dark"
+          : "light";
+      setTheme(restored);
+      document.documentElement.dataset.theme = restored;
+      if (restored !== "light") lastDarkTheme.current = restored;
+    } catch {
+      /* Theme remains usable when storage is unavailable. */
+    }
+    function preventBrowserSave(event: KeyboardEvent) {
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        event.code === "KeyS" &&
+        !event.altKey
+      ) {
+        event.preventDefault();
+      }
+    }
+    window.addEventListener("keydown", preventBrowserSave, true);
+    return () =>
+      window.removeEventListener("keydown", preventBrowserSave, true);
+  }, []);
+
+  function changeTheme(next: Theme) {
+    setTheme(next);
+    document.documentElement.dataset.theme = next;
+    if (next !== "light") lastDarkTheme.current = next;
+    try {
+      localStorage.setItem(themeStorageKey, next);
+    } catch {
+      /* Keep theme in memory. */
+    }
+  }
 
   useEffect(() => {
     if (logBody.current)
@@ -113,6 +160,35 @@ export function Workspace() {
         </a>
         <span className="workspace-label">나만의 풀이 공간</span>
         <div className="toolbar">
+          <div className="theme-control">
+            <button
+              className="mode-button"
+              aria-label={
+                theme === "light" ? "다크 모드로 전환" : "라이트 모드로 전환"
+              }
+              onClick={() =>
+                changeTheme(theme === "light" ? lastDarkTheme.current : "light")
+              }
+            >
+              {theme === "light" ? "☾" : "☀"}
+            </button>
+            <label className="visually-hidden" htmlFor="theme">
+              화면 테마
+            </label>
+            <select
+              id="theme"
+              value={theme}
+              onChange={(event) => {
+                if (isTheme(event.target.value))
+                  changeTheme(event.target.value);
+              }}
+            >
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+              <option value="rider-dark">Rider Dark</option>
+              <option value="dracula">Dracula</option>
+            </select>
+          </div>
           <div className="language-control">
             <label htmlFor="language">언어</label>
             <select
@@ -154,6 +230,7 @@ export function Workspace() {
                 <CodeEditor
                   key={language}
                   language={language}
+                  theme={theme}
                   initialCode={documents[language]}
                   onChange={updateCode}
                   onCursor={(line, column) => setCursor({ line, column })}
