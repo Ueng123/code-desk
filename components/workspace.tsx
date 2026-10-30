@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent,
+} from "react";
 import { Icon } from "./icon";
 import { CodeEditor } from "./code-editor";
 import { languages, type Language } from "@/lib/languages";
@@ -41,6 +47,87 @@ export function Workspace() {
     outputBytes: number;
   } | null>(null);
   const [logMode, setLogMode] = useState<"full" | "split" | "hidden">("split");
+  const [logShare, setLogShare] = useState(0.5);
+  const [dragging, setDragging] = useState(false);
+  const [stacked, setStacked] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia(
+      "(orientation: portrait), (max-width: 760px)",
+    );
+    const update = () => setStacked(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  const workspace = useRef<HTMLDivElement>(null);
+  const drag = useRef<{
+    id: number;
+    vertical: boolean;
+    initial: number;
+  } | null>(null);
+
+  function selectLogMode(mode: "full" | "split" | "hidden") {
+    if (mode === "split") setLogShare(0.5);
+    setLogMode(mode);
+  }
+  function finishResize(share: number, size: number) {
+    setLogShare(share);
+    if (share >= 0.9) setLogMode("full");
+    else if (share * size <= Math.max(size * 0.1, 66)) setLogMode("hidden");
+  }
+  function pointerShare(
+    event: PointerEvent<HTMLDivElement>,
+    vertical: boolean,
+  ) {
+    const bounds = workspace.current!.getBoundingClientRect();
+    const size = vertical ? bounds.height : bounds.width;
+    const offset = vertical
+      ? event.clientY - bounds.top
+      : event.clientX - bounds.left;
+    return {
+      share: Math.max(0, Math.min(1, 1 - offset / Math.max(1, size))),
+      size,
+    };
+  }
+  function startResize(event: PointerEvent<HTMLDivElement>) {
+    if (!event.isPrimary || event.button !== 0 || !workspace.current) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    drag.current = {
+      id: event.pointerId,
+      vertical: getComputedStyle(workspace.current).display === "flex",
+      initial: logShare,
+    };
+    setDragging(true);
+  }
+  function moveResize(event: PointerEvent<HTMLDivElement>) {
+    if (drag.current?.id !== event.pointerId) return;
+    setLogShare(pointerShare(event, drag.current.vertical).share);
+  }
+  function stopResize(event: PointerEvent<HTMLDivElement>, cancelled = false) {
+    const current = drag.current;
+    if (!current || current.id !== event.pointerId) return;
+    drag.current = null;
+    setDragging(false);
+    if (cancelled) setLogShare(current.initial);
+    else {
+      const { share, size } = pointerShare(event, current.vertical);
+      finishResize(share, size);
+    }
+    if (event.currentTarget.hasPointerCapture(event.pointerId))
+      event.currentTarget.releasePointerCapture(event.pointerId);
+  }
+  useEffect(() => {
+    function cancelResize() {
+      if (drag.current) {
+        setLogShare(drag.current.initial);
+        drag.current = null;
+        setDragging(false);
+      }
+    }
+    window.addEventListener("resize", cancelResize);
+    return () => window.removeEventListener("resize", cancelResize);
+  }, []);
   const expanded = logMode !== "hidden";
   const [fontSize, setFontSize] = useState(15);
   const [fontInput, setFontInput] = useState("15");
@@ -157,7 +244,7 @@ export function Workspace() {
   async function handleRun() {
     if (running.current || !loaded) return;
     running.current = true;
-    if (logMode === "hidden") setLogMode("split");
+    if (logMode === "hidden") selectLogMode("split");
     setStatus("running");
     setMetrics(null);
     const runLanguage = languages[language].name;
@@ -335,8 +422,21 @@ export function Workspace() {
       </header>
 
       <main aria-label="코딩 작업 공간">
-        <div className={`workspace-grid logs-${logMode}`}>
-          <section className="editor-panel" aria-label="코드 편집 영역">
+        <div
+          ref={workspace}
+          className={`workspace-grid logs-${logMode}${dragging ? " is-resizing" : ""}`}
+          style={
+            {
+              "--editor-share": `${(1 - logShare) * 100}%`,
+              "--log-share": `${logShare * 100}%`,
+            } as CSSProperties
+          }
+        >
+          <section
+            id="code-panel"
+            className="editor-panel"
+            aria-label="코드 편집 영역"
+          >
             <div className="editor-content">
               {loaded ? (
                 <CodeEditor
@@ -369,6 +469,56 @@ export function Workspace() {
               </div>
             </div>
           </section>
+
+          {logMode === "split" && (
+            <div
+              className="split-handle"
+              role="separator"
+              aria-orientation={stacked ? "horizontal" : "vertical"}
+              tabIndex={0}
+              aria-label="코드와 로그 영역 크기 조절"
+              aria-controls="code-panel log-content"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(logShare * 100)}
+              aria-valuetext={`로그 ${Math.round(logShare * 100)}%`}
+              onPointerDown={startResize}
+              onPointerMove={moveResize}
+              onPointerUp={(event) => stopResize(event)}
+              onPointerCancel={(event) => stopResize(event, true)}
+              onLostPointerCapture={() => {
+                if (drag.current) {
+                  setLogShare(drag.current.initial);
+                  drag.current = null;
+                  setDragging(false);
+                }
+              }}
+              onKeyDown={(event) => {
+                if (!workspace.current) return;
+                const vertical =
+                  getComputedStyle(workspace.current).display === "flex";
+                const increase = vertical ? "ArrowUp" : "ArrowLeft";
+                const decrease = vertical ? "ArrowDown" : "ArrowRight";
+                if (![increase, decrease, "Home", "End"].includes(event.key))
+                  return;
+                event.preventDefault();
+                const bounds = workspace.current.getBoundingClientRect();
+                const share =
+                  event.key === "Home"
+                    ? 0
+                    : event.key === "End"
+                      ? 1
+                      : Math.max(
+                          0,
+                          Math.min(
+                            1,
+                            logShare + (event.key === increase ? 0.02 : -0.02),
+                          ),
+                        );
+                finishResize(share, vertical ? bounds.height : bounds.width);
+              }}
+            />
+          )}
 
           <section
             className={`logs-panel ${expanded ? "is-expanded" : "is-collapsed"}`}
@@ -410,7 +560,7 @@ export function Workspace() {
                         type="button"
                         aria-pressed={logMode === mode}
                         aria-controls="log-content"
-                        onClick={() => setLogMode(mode)}
+                        onClick={() => selectLogMode(mode)}
                       >
                         {label}
                       </button>
@@ -426,7 +576,7 @@ export function Workspace() {
                 title="실행 로그 펼치기"
                 aria-expanded={false}
                 aria-controls="log-content"
-                onClick={() => setLogMode("split")}
+                onClick={() => selectLogMode("split")}
               >
                 <span className="log-rail-icon">
                   <Icon name="terminal" />
