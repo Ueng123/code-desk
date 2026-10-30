@@ -40,7 +40,31 @@ export function Workspace() {
     durationMs: number;
     outputBytes: number;
   } | null>(null);
-  const [expanded, setExpanded] = useState(true);
+  const [logMode, setLogMode] = useState<"full" | "split" | "hidden">("split");
+  const expanded = logMode !== "hidden";
+  const [fontSize, setFontSize] = useState(15);
+  const [fontInput, setFontInput] = useState("15");
+  function changeFontSize(value: number) {
+    const size = Math.min(32, Math.max(10, Math.round(value)));
+    setFontSize(size);
+    setFontInput(String(size));
+    try {
+      localStorage.setItem("code-desk:v1:font-size", String(size));
+    } catch {
+      /* In-memory fallback. */
+    }
+  }
+  useEffect(() => {
+    try {
+      const value = Number(localStorage.getItem("code-desk:v1:font-size"));
+      if (Number.isFinite(value) && value >= 10 && value <= 32) {
+        setFontSize(Math.round(value));
+        setFontInput(String(Math.round(value)));
+      }
+    } catch {
+      /* Use the default size. */
+    }
+  }, []);
   const [cursor, setCursor] = useState({ line: 1, column: 1 });
   const nextId = useRef(0);
   const running = useRef(false);
@@ -108,7 +132,7 @@ export function Workspace() {
   useEffect(() => {
     if (logBody.current)
       logBody.current.scrollTop = logBody.current.scrollHeight;
-  }, [entries, expanded]);
+  }, [entries, logMode]);
 
   function updateCode(code: string) {
     setDocuments((current) => ({ ...current, [language]: code }));
@@ -133,7 +157,7 @@ export function Workspace() {
   async function handleRun() {
     if (running.current || !loaded) return;
     running.current = true;
-    setExpanded(true);
+    if (logMode === "hidden") setLogMode("split");
     setStatus("running");
     setMetrics(null);
     const runLanguage = languages[language].name;
@@ -179,6 +203,69 @@ export function Workspace() {
         </a>
         <span className="workspace-label">나만의 풀이 공간</span>
         <div className="toolbar">
+          <div
+            className="font-control"
+            role="group"
+            aria-label="코드 글자 크기"
+          >
+            <button
+              type="button"
+              aria-label="코드 글자 축소"
+              onClick={() => changeFontSize(fontSize - 1)}
+              disabled={fontSize <= 10}
+            >
+              A−
+            </button>
+            <label className="visually-hidden" htmlFor="code-font-size">
+              코드 글자 크기 (px)
+            </label>
+            <input
+              id="code-font-size"
+              type="number"
+              inputMode="numeric"
+              min="10"
+              max="32"
+              step="1"
+              value={fontInput}
+              onChange={(event) => {
+                const value = event.target.value;
+                setFontInput(value);
+                const size = Number(value);
+                if (
+                  value &&
+                  Number.isInteger(size) &&
+                  size >= 10 &&
+                  size <= 32
+                ) {
+                  setFontSize(size);
+                  try {
+                    localStorage.setItem("code-desk:v1:font-size", value);
+                  } catch {
+                    /* In-memory fallback. */
+                  }
+                }
+              }}
+              onBlur={() =>
+                changeFontSize(
+                  fontInput.trim() && Number.isFinite(Number(fontInput))
+                    ? Number(fontInput)
+                    : fontSize,
+                )
+              }
+              onKeyDown={(event) => {
+                if (event.key === "Enter") event.currentTarget.blur();
+              }}
+            />
+            <span aria-hidden="true">px</span>
+            <button
+              type="button"
+              aria-label="코드 글자 확대"
+              onClick={() => changeFontSize(fontSize + 1)}
+              disabled={fontSize >= 32}
+            >
+              A+
+            </button>
+          </div>
           <div className="theme-control">
             <button
               className="mode-button"
@@ -248,7 +335,7 @@ export function Workspace() {
       </header>
 
       <main aria-label="코딩 작업 공간">
-        <div className={`workspace-grid${expanded ? "" : " logs-hidden"}`}>
+        <div className={`workspace-grid logs-${logMode}`}>
           <section className="editor-panel" aria-label="코드 편집 영역">
             <div className="editor-content">
               {loaded ? (
@@ -256,6 +343,7 @@ export function Workspace() {
                   key={language}
                   language={language}
                   theme={theme}
+                  fontSize={fontSize}
                   initialCode={documents[language]}
                   onChange={updateCode}
                   onCursor={(line, column) => setCursor({ line, column })}
@@ -305,20 +393,29 @@ export function Workspace() {
                   >
                     지우기
                   </button>
-                  <button
-                    className="collapse-button"
-                    aria-expanded={expanded}
-                    aria-controls="log-content"
-                    onClick={() => setExpanded((value) => !value)}
+                  <div
+                    className="log-modes"
+                    role="group"
+                    aria-label="로그 보기 방식"
                   >
-                    {expanded ? "접기" : "펼치기"}
-                    <Icon
-                      name="chevron"
-                      style={{
-                        transform: expanded ? "rotate(180deg)" : undefined,
-                      }}
-                    />
-                  </button>
+                    {(
+                      [
+                        ["full", "전체화면"],
+                        ["split", "반반"],
+                        ["hidden", "숨김"],
+                      ] as const
+                    ).map(([mode, label]) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        aria-pressed={logMode === mode}
+                        aria-controls="log-content"
+                        onClick={() => setLogMode(mode)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             ) : (
@@ -329,7 +426,7 @@ export function Workspace() {
                 title="실행 로그 펼치기"
                 aria-expanded={false}
                 aria-controls="log-content"
-                onClick={() => setExpanded(true)}
+                onClick={() => setLogMode("split")}
               >
                 <span className="log-rail-icon">
                   <Icon name="terminal" />

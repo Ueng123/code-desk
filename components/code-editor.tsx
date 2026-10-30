@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import { Compartment, EditorState } from "@codemirror/state";
 import {
   EditorView,
@@ -34,6 +34,7 @@ import type { Language } from "@/lib/languages";
 interface Props {
   language: Language;
   theme: Theme;
+  fontSize: number;
   initialCode: string;
   onChange: (code: string) => void;
   onCursor: (line: number, column: number) => void;
@@ -68,6 +69,7 @@ function editorAppearance(theme: Theme) {
 export function CodeEditor({
   language,
   theme,
+  fontSize,
   initialCode,
   onChange,
   onCursor,
@@ -123,14 +125,14 @@ export function CodeEditor({
           EditorView.theme({
             "&": {
               height: "100%",
-              fontSize: "15px",
+              fontSize: "var(--code-font-size)",
               backgroundColor: "var(--editor-bg)",
               color: "var(--ink)",
             },
             ".cm-scroller": {
               overflow: "auto",
               fontFamily: "var(--font-mono)",
-              lineHeight: "24px",
+              lineHeight: "var(--code-line-height)",
             },
             ".cm-content": {
               padding: "22px 0",
@@ -144,7 +146,7 @@ export function CodeEditor({
               border: "none",
               padding: "0 0 0 12px",
             },
-            ".cm-gutterElement": { lineHeight: "24px" },
+            ".cm-gutterElement": { lineHeight: "var(--code-line-height)" },
             ".cm-cursor": { borderLeftColor: "var(--editor-caret)" },
             ".cm-activeLine, .cm-activeLineGutter": {
               background: "var(--editor-active)",
@@ -175,5 +177,19 @@ export function CodeEditor({
       effects: appearance.current.reconfigure(editorAppearance(theme)),
     });
   }, [theme]);
-  return <div className="editor-host" ref={host} />;
+  useEffect(() => {
+    viewRef.current?.requestMeasure();
+  }, [fontSize]);
+  return (
+    <div
+      className="editor-host"
+      ref={host}
+      style={
+        {
+          "--code-font-size": `${fontSize}px`,
+          "--code-line-height": `${fontSize * 1.6}px`,
+        } as CSSProperties
+      }
+    />
+  );
 }
