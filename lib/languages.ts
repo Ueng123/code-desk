@@ -8,7 +8,7 @@ export const languages: Record<
     name: "Python",
     file: "solution.py",
     sample: `# 두 수의 합을 구해보세요.
-# 실행 서버는 아직 연결되어 있지 않습니다.
+# 표준 라이브러리만 사용해 실행할 수 있습니다.
 
 def solution(numbers, target):
     seen = {}
@@ -33,7 +33,7 @@ print(answer)
     sample: `using System;
 using System.Collections.Generic;
 
-// 실행 서버는 아직 연결되어 있지 않습니다.
+// .NET 8 표준 라이브러리를 사용할 수 있습니다.
 class Solution
 {
     static int[] TwoSum(int[] numbers, int target)

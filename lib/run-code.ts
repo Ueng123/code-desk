@@ -1,28 +1,28 @@
 import type { Language } from "./languages";
 
-/** Future POST /api/run request body. */
 export interface RunRequest {
   language: Language;
   code: string;
 }
 
-/** Preview completion is distinct from actual code execution. */
-export type RunResponse =
-  | { mode: "preview"; status: "completed"; message: string }
-  | {
-      mode: "execution";
-      status: "completed" | "error";
-      stdout: string;
-      stderr: string;
-      exitCode: number | null;
-    };
+export interface RunResponse {
+  mode: "execution";
+  status: "completed" | "error";
+  stdout: string;
+  stderr: string;
+  exitCode: number | null;
+  reason?: "timeout" | "output_limit" | "service" | "invalid_request";
+}
 
-/** UI-only adapter: no network, compilation, or evaluation of the supplied code. */
-export async function runCode(_request: RunRequest): Promise<RunResponse> {
-  await new Promise<void>((resolve) => setTimeout(resolve, 500));
-  return {
-    mode: "preview",
-    status: "completed",
-    message: "실행 서버 미연결 — UI 미리보기",
-  };
+export async function runCode(request: RunRequest): Promise<RunResponse> {
+  const response = await fetch("/api/run", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+    signal: AbortSignal.timeout(110_000),
+  });
+  const result: RunResponse = await response.json();
+  if (result.mode !== "execution")
+    throw new Error("실행 응답을 읽을 수 없습니다.");
+  return result;
 }

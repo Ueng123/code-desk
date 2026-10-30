@@ -17,8 +17,8 @@ type Status = "ready" | "running" | "completed" | "error";
 type Entry = { id: number; time: string; status: Status; message: string };
 const statusLabels: Record<Status, string> = {
   ready: "준비",
-  running: "미리보기 실행 중",
-  completed: "미리보기 완료",
+  running: "실행 중",
+  completed: "완료",
   error: "오류",
 };
 const storageKey = (language: Language) => `code-desk:v1:${language}`;
@@ -130,24 +130,24 @@ export function Workspace() {
     running.current = true;
     setExpanded(true);
     setStatus("running");
-    append(
-      "running",
-      `${languages[language].name} · 실행 서버 미연결 — UI 미리보기`,
-    );
+    const runLanguage = languages[language].name;
+    append("running", `${runLanguage} · 실행 환경 준비 및 코드 실행 중…`);
     try {
       const result = await runCode({ language, code: documents[language] });
-      if (result.mode !== "preview")
-        throw new Error("미리보기 응답이 아닙니다.");
-      setStatus("completed");
+      setStatus(result.status);
+      if (result.stdout)
+        append(result.status, `[${runLanguage} stdout]\n${result.stdout}`);
+      if (result.stderr)
+        append("error", `[${runLanguage} stderr]\n${result.stderr}`);
       append(
-        "completed",
-        `${result.message}\n미리보기가 완료되었습니다. 코드는 실행되지 않았습니다.`,
+        result.status,
+        `${runLanguage} · ${result.status === "completed" ? "실행 완료" : "실행 실패"} · 종료 코드: ${result.exitCode ?? "없음"}`,
       );
     } catch {
       setStatus("error");
       append(
         "error",
-        "UI 미리보기 처리 중 오류가 발생했습니다. 다시 시도해 주세요. 코드는 실행되지 않았습니다.",
+        "실행 서버에 연결하지 못했거나 응답 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.",
       );
     } finally {
       running.current = false;
@@ -227,7 +227,7 @@ export function Workspace() {
             disabled={!loaded || status === "running"}
           >
             <span aria-hidden="true">{status === "running" ? "◌" : "▷"}</span>
-            {status === "running" ? "미리보기 중…" : "실행 미리보기"}
+            {status === "running" ? "실행 중…" : "코드 실행"}
           </button>
         </div>
       </header>
@@ -314,13 +314,13 @@ export function Workspace() {
                   <span />
                   {statusLabels[status]}
                 </span>
-                <span>PREVIEW</span>
+                <span>SANDBOX</span>
               </div>
               <div
                 className="log-body"
                 ref={logBody}
                 role="log"
-                aria-label="미리보기 실행 기록"
+                aria-label="코드 실행 기록"
                 aria-live="polite"
                 aria-relevant="additions"
               >
@@ -331,13 +331,13 @@ export function Workspace() {
                     </div>
                     <h3>첫 번째 아이디어를 적어보세요</h3>
                     <p>
-                      코드를 작성하고 <strong>실행 미리보기</strong>를 누르면
+                      코드를 작성하고 <strong>코드 실행</strong>를 누르면
                       <br />
                       이곳에서 상태를 확인할 수 있어요.
                     </p>
                     <span className="empty-divider" />
                     <p className="empty-note">
-                      아직 실제 코드 실행은 지원하지 않아요.
+                      Python · C# / 표준 입력은 빈 값으로 처리해요.
                     </p>
                   </div>
                 ) : (
@@ -360,8 +360,8 @@ export function Workspace() {
               <div className="preview-notice">
                 <span aria-hidden="true">ⓘ</span>
                 <div>
-                  <strong>실행 서버 미연결 — UI 미리보기</strong>
-                  <p>코드 실행 및 컴파일 결과가 아닙니다.</p>
+                  <strong>Vercel Sandbox에서 격리 실행</strong>
+                  <p>실행 20초 · 출력 64KB · 외부 네트워크 차단</p>
                 </div>
               </div>
             </div>
