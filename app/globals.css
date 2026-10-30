@@ -615,9 +615,7 @@ main {
   }
 }
 
-:root[data-theme="dark"],
-:root[data-theme="rider-dark"],
-:root[data-theme="dracula"] {
+:root[data-mode="dark"] {
   color-scheme: dark;
   --background: #202724;
   --surface: #252e29;
@@ -743,4 +741,194 @@ main {
   .run-button {
     flex: 1 0 100%;
   }
+}
+
+:root[data-theme="one-dark"] {
+  --background: #282c34;
+  --surface: #21252b;
+  --ink: #abb2bf;
+  --muted: #929baa;
+  --line: #3e4451;
+  --green: #426d9b;
+  --accent-text: #61afef;
+  --soft: #323842;
+  --editor-active: #323842;
+  --editor-selection: #3e4451;
+  --editor-bg: #282c34;
+  --editor-gutter: #929baa;
+  --editor-caret: #abb2bf;
+  --editor-match: #3e4451;
+  --notice: #21252b;
+  --notice-text: #abb2bf;
+}
+
+:root[data-theme="one-light"] {
+  --background: #fafafa;
+  --surface: #f0f0f0;
+  --ink: #383a42;
+  --muted: #696c77;
+  --line: #d9dce2;
+  --green: #4078f2;
+  --accent-text: #345fc4;
+  --soft: #eef0f3;
+  --editor-active: #e9ebef;
+  --editor-selection: #d7e3fc;
+  --editor-bg: #fafafa;
+  --editor-gutter: #696c77;
+  --editor-caret: #383a42;
+  --editor-match: #d7e3fc;
+  --notice: #f0f0f0;
+  --notice-text: #383a42;
+}
+
+:root[data-theme="vscode-dark"] {
+  --background: #1e1e1e;
+  --surface: #252526;
+  --ink: #d4d4d4;
+  --muted: #a1a1a1;
+  --line: #424242;
+  --green: #0e639c;
+  --accent-text: #75beff;
+  --soft: #2d2d30;
+  --editor-active: #282828;
+  --editor-selection: #264f78;
+  --editor-bg: #1e1e1e;
+  --editor-gutter: #a1a1a1;
+  --editor-caret: #d4d4d4;
+  --editor-match: #264f78;
+  --notice: #252526;
+  --notice-text: #d4d4d4;
+}
+
+:root[data-theme="vscode-light"] {
+  --background: #ffffff;
+  --surface: #f3f3f3;
+  --ink: #333333;
+  --muted: #666666;
+  --line: #d4d4d4;
+  --green: #007acc;
+  --accent-text: #0063a5;
+  --soft: #e8edf2;
+  --editor-active: #f0f0f0;
+  --editor-selection: #add6ff;
+  --editor-bg: #ffffff;
+  --editor-gutter: #666666;
+  --editor-caret: #333333;
+  --editor-match: #add6ff;
+  --notice: #f3f3f3;
+  --notice-text: #333333;
+}
+
+:root[data-theme="github-dark"] {
+  --background: #0d1117;
+  --surface: #161b22;
+  --ink: #c9d1d9;
+  --muted: #8b949e;
+  --line: #30363d;
+  --green: #238636;
+  --accent-text: #7ee787;
+  --soft: #21262d;
+  --editor-active: #161b22;
+  --editor-selection: #264466;
+  --editor-bg: #0d1117;
+  --editor-gutter: #8b949e;
+  --editor-caret: #c9d1d9;
+  --editor-match: #264466;
+  --notice: #161b22;
+  --notice-text: #c9d1d9;
+}
+
+:root[data-theme="github-light"] {
+  --background: #ffffff;
+  --surface: #f6f8fa;
+  --ink: #24292f;
+  --muted: #57606a;
+  --line: #d0d7de;
+  --green: #1a7f37;
+  --accent-text: #116329;
+  --soft: #eaeef2;
+  --editor-active: #f6f8fa;
+  --editor-selection: #b6d6fa;
+  --editor-bg: #ffffff;
+  --editor-gutter: #57606a;
+  --editor-caret: #24292f;
+  --editor-match: #b6d6fa;
+  --notice: #f6f8fa;
+  --notice-text: #24292f;
+}
+
+:root[data-theme="nord"] {
+  --background: #2e3440;
+  --surface: #3b4252;
+  --ink: #d8dee9;
+  --muted: #a5b1c7;
+  --line: #4c566a;
+  --green: #52748c;
+  --accent-text: #88c0d0;
+  --soft: #434c5e;
+  --editor-active: #3b4252;
+  --editor-selection: #4c566a;
+  --editor-bg: #2e3440;
+  --editor-gutter: #a5b1c7;
+  --editor-caret: #d8dee9;
+  --editor-match: #4c566a;
+  --notice: #3b4252;
+  --notice-text: #d8dee9;
+}
+
+:root[data-theme="solarized-dark"] {
+  --background: #002b36;
+  --surface: #073642;
+  --ink: #93a1a1;
+  --muted: #839496;
+  --line: #27515c;
+  --green: #267c91;
+  --accent-text: #7fc5d0;
+  --soft: #16434e;
+  --editor-active: #073642;
+  --editor-selection: #275562;
+  --editor-bg: #002b36;
+  --editor-gutter: #839496;
+  --editor-caret: #93a1a1;
+  --editor-match: #275562;
+  --notice: #073642;
+  --notice-text: #93a1a1;
+}
+
+:root[data-theme="solarized-light"] {
+  --background: #fdf6e3;
+  --surface: #eee8d5;
+  --ink: #586e75;
+  --muted: #657b83;
+  --line: #d7d0b9;
+  --green: #267c91;
+  --accent-text: #1c6576;
+  --soft: #e8e1cd;
+  --editor-active: #eee8d5;
+  --editor-selection: #d0ddd6;
+  --editor-bg: #fdf6e3;
+  --editor-gutter: #657b83;
+  --editor-caret: #586e75;
+  --editor-match: #d0ddd6;
+  --notice: #eee8d5;
+  --notice-text: #586e75;
+}
+
+:root[data-theme="monokai"] {
+  --background: #272822;
+  --surface: #20211c;
+  --ink: #f8f8f2;
+  --muted: #a2a394;
+  --line: #494a40;
+  --green: #657b30;
+  --accent-text: #a6e22e;
+  --soft: #38392f;
+  --editor-active: #34352d;
+  --editor-selection: #49483e;
+  --editor-bg: #272822;
+  --editor-gutter: #a2a394;
+  --editor-caret: #f8f8f2;
+  --editor-match: #49483e;
+  --notice: #20211c;
+  --notice-text: #f8f8f2;
 }

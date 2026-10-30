@@ -6,6 +6,8 @@ import { languages, type Language } from "@/lib/languages";
 import { runCode } from "@/lib/run-code";
 import {
   isTheme,
+  isDarkTheme,
+  themes,
   themeStorageKey,
   type Theme,
   type DarkTheme,
@@ -63,7 +65,10 @@ export function Workspace() {
           : "light";
       setTheme(restored);
       document.documentElement.dataset.theme = restored;
-      if (restored !== "light") lastDarkTheme.current = restored;
+      document.documentElement.dataset.mode = isDarkTheme(restored)
+        ? "dark"
+        : "light";
+      if (isDarkTheme(restored)) lastDarkTheme.current = restored;
     } catch {
       /* Theme remains usable when storage is unavailable. */
     }
@@ -84,7 +89,10 @@ export function Workspace() {
   function changeTheme(next: Theme) {
     setTheme(next);
     document.documentElement.dataset.theme = next;
-    if (next !== "light") lastDarkTheme.current = next;
+    document.documentElement.dataset.mode = isDarkTheme(next)
+      ? "dark"
+      : "light";
+    if (isDarkTheme(next)) lastDarkTheme.current = next;
     try {
       localStorage.setItem(themeStorageKey, next);
     } catch {
@@ -164,13 +172,15 @@ export function Workspace() {
             <button
               className="mode-button"
               aria-label={
-                theme === "light" ? "다크 모드로 전환" : "라이트 모드로 전환"
+                !isDarkTheme(theme) ? "다크 모드로 전환" : "라이트 모드로 전환"
               }
               onClick={() =>
-                changeTheme(theme === "light" ? lastDarkTheme.current : "light")
+                changeTheme(
+                  !isDarkTheme(theme) ? lastDarkTheme.current : "light",
+                )
               }
             >
-              {theme === "light" ? "☾" : "☀"}
+              {!isDarkTheme(theme) ? "☾" : "☀"}
             </button>
             <label className="visually-hidden" htmlFor="theme">
               화면 테마
@@ -183,10 +193,20 @@ export function Workspace() {
                   changeTheme(event.target.value);
               }}
             >
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-              <option value="rider-dark">Rider Dark</option>
-              <option value="dracula">Dracula</option>
+              {(["light", "dark"] as const).map((mode) => (
+                <optgroup
+                  key={mode}
+                  label={mode === "light" ? "라이트 테마" : "다크 테마"}
+                >
+                  {themes
+                    .filter((item) => item.mode === mode)
+                    .map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.label}
+                      </option>
+                    ))}
+                </optgroup>
+              ))}
             </select>
           </div>
           <div className="language-control">

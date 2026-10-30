@@ -28,7 +28,7 @@ import { closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
 import { python } from "@codemirror/lang-python";
 import { csharp } from "@codemirror/legacy-modes/mode/clike";
 import { tags } from "@lezer/highlight";
-import { syntaxPalettes, type Theme } from "@/lib/themes";
+import { syntaxPalettes, isDarkTheme, type Theme } from "@/lib/themes";
 import type { Language } from "@/lib/languages";
 
 interface Props {
@@ -42,7 +42,7 @@ interface Props {
 function editorAppearance(theme: Theme) {
   const palette = syntaxPalettes[theme];
   return [
-    EditorView.theme({}, { dark: theme !== "light" }),
+    EditorView.theme({}, { dark: isDarkTheme(theme) }),
     syntaxHighlighting(
       HighlightStyle.define([
         { tag: tags.keyword, color: palette.keyword },
