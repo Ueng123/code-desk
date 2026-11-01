@@ -6,7 +6,7 @@ import type { RunRequest, RunResponse } from "./run-code";
 // It bounds output before it reaches SDK logs and terminates the whole process group.
 const supervisor = String.raw`
 import json, os, selectors, signal, subprocess, sys, time
-command = (["python3", "-I", "-u", "/vercel/sandbox/solution.py"] if sys.argv[1] == "python" else
+command = (["/vercel/sandbox/venv/bin/python" if len(sys.argv) > 2 and sys.argv[2] == "packages" else "python3", "-I", "-u", "/vercel/sandbox/solution.py"] if sys.argv[1] == "python" else
     ["/vercel/sandbox/.dotnet/dotnet", "run", "--no-restore", "--project", "/vercel/sandbox/runner", "--verbosity", "quiet"])
 started = time.monotonic()
 p = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -101,6 +101,42 @@ export async function executeCode(request: RunRequest): Promise<RunResponse> {
         throw error;
       }
     }
+  } else if (request.packages?.length) {
+    sandbox = await Sandbox.create({
+      ...options,
+      timeout: 230_000,
+      networkPolicy: "allow-all",
+    });
+    try {
+      const venv = await sandbox.runCommand({
+        cmd: "python3",
+        args: ["-m", "venv", "/vercel/sandbox/venv"],
+        timeoutMs: 20_000,
+      });
+      if (venv.exitCode !== 0)
+        throw new Error("Python 가상 환경을 만들지 못했습니다.");
+      const packages = [...new Set(request.packages)];
+      for (const pkg of packages) {
+        const args = [
+          "install",
+          "--disable-pip-version-check",
+          "--no-cache-dir",
+          "--only-binary=:all:",
+        ];
+        if (pkg === "torch")
+          args.push("--index-url", "https://download.pytorch.org/whl/cpu");
+        const install = await sandbox.runCommand({
+          cmd: "/vercel/sandbox/venv/bin/pip",
+          args: [...args, pkg],
+          timeoutMs: 150_000,
+        });
+        if (install.exitCode !== 0) throw new Error("PACKAGE_INSTALL_FAILED");
+      }
+      await sandbox.updateNetworkPolicy("deny-all");
+    } catch (error) {
+      await sandbox.stop().catch(() => {});
+      throw error;
+    }
   } else {
     sandbox = await Sandbox.create(options);
   }
@@ -120,7 +156,12 @@ export async function executeCode(request: RunRequest): Promise<RunResponse> {
     ]);
     const result = await sandbox.runCommand({
       cmd: "python3",
-      args: ["-I", "/vercel/sandbox/supervisor.py", request.language],
+      args: [
+        "-I",
+        "/vercel/sandbox/supervisor.py",
+        request.language,
+        request.packages?.length ? "packages" : "none",
+      ],
       cwd: "/vercel/sandbox",
       timeoutMs: 30_000,
     });

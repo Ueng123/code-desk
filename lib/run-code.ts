@@ -3,6 +3,7 @@ import type { Language } from "./languages";
 export interface RunRequest {
   language: Language;
   code: string;
+  packages?: ("numpy" | "torch")[];
 }
 
 export interface RunResponse {
@@ -23,7 +24,7 @@ export async function runCode(request: RunRequest): Promise<RunResponse> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
-    signal: AbortSignal.timeout(110_000),
+    signal: AbortSignal.timeout(260_000),
   });
   const result: RunResponse = await response.json();
   if (result.mode !== "execution")

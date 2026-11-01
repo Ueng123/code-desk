@@ -3,7 +3,7 @@ import { executeCode } from "@/lib/sandbox-runner";
 import type { RunResponse } from "@/lib/run-code";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 240;
 const MAX_BODY_BYTES = 100_000;
 const MAX_CODE_BYTES = 65_536;
 // Per warm instance; Vercel Firewall can enforce distributed limits as usage grows.
@@ -87,6 +87,15 @@ export async function POST(request: NextRequest) {
       "invalid_request",
     );
   }
+  if (
+    "packages" in body &&
+    (!Array.isArray(body.packages) ||
+      body.packages.length > 2 ||
+      body.packages.some((p: unknown) => p !== "numpy" && p !== "torch") ||
+      (body.language !== "python" && body.packages.length > 0))
+  ) {
+    return failure("지원하지 않는 라이브러리입니다.", 400, "invalid_request");
+  }
   if (active >= 2)
     return failure("요청이 많습니다. 잠시 후 다시 실행해 주세요.", 429);
   active++;
@@ -94,11 +103,18 @@ export async function POST(request: NextRequest) {
     const result = await executeCode({
       language: body.language,
       code: body.code,
+      packages:
+        "packages" in body ? (body.packages as ("numpy" | "torch")[]) : [],
     });
     return NextResponse.json(result, {
       headers: { "Cache-Control": "no-store" },
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "PACKAGE_INSTALL_FAILED")
+      return failure(
+        "라이브러리 설치에 실패했습니다. 패키지 또는 실행 환경을 확인해 주세요.",
+        503,
+      );
     console.error("Sandbox execution unavailable");
     return failure(
       "실행 환경을 준비하지 못했습니다. 잠시 후 다시 시도해 주세요.",

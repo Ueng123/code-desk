@@ -33,6 +33,7 @@ const storageKey = (language: Language) => `code-desk:v1:${language}`;
 export function Workspace() {
   const [theme, setTheme] = useState<Theme>("light");
   const lastDarkTheme = useRef<DarkTheme>("rider-dark");
+  const [packages, setPackages] = useState<("numpy" | "torch")[]>([]);
   const [language, setLanguage] = useState<Language>("python");
   const [documents, setDocuments] = useState({
     python: languages.python.sample,
@@ -250,7 +251,11 @@ export function Workspace() {
     const runLanguage = languages[language].name;
     append("running", `${runLanguage} · 실행 환경 준비 및 코드 실행 중…`);
     try {
-      const result = await runCode({ language, code: documents[language] });
+      const result = await runCode({
+        language,
+        code: documents[language],
+        packages: language === "python" ? packages : [],
+      });
       setStatus(result.status);
       if (result.durationMs !== undefined && result.outputBytes !== undefined)
         setMetrics({
@@ -394,6 +399,27 @@ export function Workspace() {
               ))}
             </select>
           </div>
+          {language === "python" && (
+            <fieldset className="package-control">
+              <legend>라이브러리</legend>
+              {(["numpy", "torch"] as const).map((pkg) => (
+                <label key={pkg}>
+                  <input
+                    type="checkbox"
+                    checked={packages.includes(pkg)}
+                    onChange={(event) =>
+                      setPackages((current) =>
+                        event.target.checked
+                          ? [...current, pkg]
+                          : current.filter((item) => item !== pkg),
+                      )
+                    }
+                  />
+                  {pkg === "numpy" ? "NumPy" : "PyTorch (CPU)"}
+                </label>
+              ))}
+            </fieldset>
+          )}
           <div className="language-control">
             <label htmlFor="language">언어</label>
             <select
