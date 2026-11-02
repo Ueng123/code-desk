@@ -24,12 +24,18 @@ import {
   syntaxHighlighting,
   HighlightStyle,
 } from "@codemirror/language";
-import { closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
+import {
+  autocompletion,
+  closeBrackets,
+  closeBracketsKeymap,
+  completionKeymap,
+} from "@codemirror/autocomplete";
 import { python } from "@codemirror/lang-python";
 import { csharp } from "@codemirror/legacy-modes/mode/clike";
 import { tags } from "@lezer/highlight";
 import { syntaxPalettes, isDarkTheme, type Theme } from "@/lib/themes";
 import type { Language } from "@/lib/languages";
+import { csharpCompletions } from "@/lib/csharp-completion";
 
 interface Props {
   language: Language;
@@ -112,13 +118,26 @@ export function CodeEditor({
           highlightActiveLineGutter(),
           bracketMatching(),
           closeBrackets(),
+          autocompletion({
+            activateOnTyping: true,
+            icons: true,
+            maxRenderedOptions: 8,
+          }),
           indentOnInput(),
           indentUnit.of("    "),
           appearance.current.of(editorAppearance(initialTheme.current)),
           typography.current.of(editorTypography(initialFontSize.current)),
-          language === "python" ? python() : StreamLanguage.define(csharp),
+          language === "python"
+            ? python()
+            : [
+                StreamLanguage.define(csharp),
+                EditorState.languageData.of(() => [
+                  { autocomplete: csharpCompletions },
+                ]),
+              ],
           keymap.of([
             ...closeBracketsKeymap,
+            ...completionKeymap,
             ...defaultKeymap,
             ...historyKeymap,
             indentWithTab,
@@ -160,6 +179,22 @@ export function CodeEditor({
               color: "var(--editor-gutter)",
               border: "none",
             },
+            ".cm-tooltip-autocomplete": {
+              backgroundColor: "var(--surface)",
+              color: "var(--ink)",
+              border: "1px solid var(--line)",
+              borderRadius: "8px",
+              overflow: "hidden",
+            },
+            ".cm-tooltip-autocomplete > ul > li": {
+              padding: "6px 10px",
+              minHeight: "32px",
+            },
+            ".cm-tooltip-autocomplete > ul > li[aria-selected]": {
+              backgroundColor: "var(--soft)",
+              color: "var(--ink)",
+            },
+            ".cm-completionDetail": { color: "var(--muted)" },
             ".cm-cursor": { borderLeftColor: "var(--editor-caret)" },
             ".cm-activeLine, .cm-activeLineGutter": {
               background: "var(--editor-active)",

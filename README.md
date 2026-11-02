@@ -66,3 +66,7 @@ node --env-file=.env.local scripts/prepare-csharp.mjs
 ## Android 앱
 
 기존 배포 사이트를 전용 WebView로 여는 Android 앱은 [`android/`](android/README.md)에 있습니다. 설치 방법과 APK 재빌드 방법은 해당 문서를 참고하세요. Android 프로젝트는 웹 앱의 빌드와 별도로 관리합니다.
+
+## 자동완성
+
+Python 내장 함수·키워드와 C# 키워드, 자주 사용하는 .NET 형식·정적 멤버가 입력 중 제안됩니다. `Ctrl+Space`로 직접 열고 방향키와 Enter 또는 터치로 선택할 수 있습니다. Tab은 들여쓰기에 사용합니다. C# 제안은 미리 정의된 목록으로, 프로젝트 전체의 타입을 분석하는 언어 서버는 아닙니다.
